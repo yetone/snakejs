@@ -2,12 +2,21 @@
   var $DOC = window.document,
       snake = window.snake = {},
       $head = $DOC.head,
-      scriptMap = {},
+      cbkMap = {},
+      moduleMap = {},
       appendedScripts = [];
   function addOnload($node, cbk) {
+    // TODO
     if ('onload' in $node) {
-      $node.onload = cbk;
+      return $node.onload = onload;
     }
+    function onload() {
+      $node.remove ? $node.remove() : $head.removeChild($node);
+      cbk();
+    }
+  }
+  function getSrcPath(src) {
+    return src.substr(0, src.lastIndexOf('/') + 1);
   }
   function appendScriptElement(src, cbk, $parent) {
     $parent = $parent || $head;
@@ -15,17 +24,34 @@
     addOnload($node, cbk);
     $node.async = true;
     $node.src = src;
-    appendedScript.push($node);
+    appendedScripts.push($node);
     $parent.appendChild($node);
   }
-  function define(str, func) {
-    scriptMap[str] = func;
+  function define(str, cbk) {
+    cbkMap[str] = cbk;
+    var module = moduleMap[str] = {},
+        exports = {};
+    module.exports = exports;
+    cbk(require, exports, module);
   }
-  function require(str, func) {
-    var src = str;
+  function use(str, cbk) {
+    var $current = $DOC.currentScript;
+    var path = getSrcPath($current.src);
+    var src = path + str;
     if (str.slice(str.length - 3) !== '.js') {
-      src = str + '.js';
+      src = path + str + '.js';
     }
-    appendScriptElement(src, func);
+    appendScriptElement(src, function() {
+      cbk && cbk(moduleMap[str].exports);
+    });
   }
+  function require(str) {
+    use(str);
+    if (!moduleMap[str]) {
+      throw Error('no module named "' + str + '"!');
+    }
+    return moduleMap[str].exports;
+  }
+  snake.define = define;
+  snake.use = use;
 })((new Function('return this;'))());

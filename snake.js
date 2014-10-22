@@ -2,7 +2,6 @@
   var $DOC = window.document,
       snake = window.snake = {},
       $head = $DOC.head,
-      cbkMap = {},
       moduleMap = {},
       appendedScripts = [],
       arrProto = window.Array.prototype,
@@ -131,11 +130,12 @@
   }
   function use(arr, cbk) {
     var acc = [];
+    var idxAcc = [];
     if (!isArray(arr)) {
       arr = arr.split(' ');
     }
     each(arr, _use);
-    function _use(id) {
+    function _use(id, idx) {
       var $current = $DOC.currentScript;
       var path = getSrcPath($current.src);
       var src = genSrc(path, id);
@@ -145,8 +145,9 @@
           console.log(id, arr);
           return;
         }
-        acc.push(moduleMap[id].exports);
-        if (acc.length === arr.length) {
+        acc[idx] = moduleMap[id].exports;
+        idxAcc.push(idx);
+        if (idxAcc.length === arr.length) {
           cbk.apply(cbk, acc);
         }
       });

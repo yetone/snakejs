@@ -99,6 +99,12 @@
   function getSrcPath(src) {
     return src.substr(0, src.lastIndexOf('/') + 1);
   }
+  function genSrc(path, id) {
+    if (id.slice(id.length - 3) !== '.js') {
+      id = id + '.js';
+    }
+    return path + id;
+  }
   function appendScriptElement(src, id, $parent) {
     $parent = $parent || $head;
     var $node = $DOC.createElement('script');
@@ -122,12 +128,6 @@
       arrProto.push.apply(args, arguments);
       cbk.apply(cbk, args);
     }
-  }
-  function genSrc(path, id) {
-    if (id.slice(id.length - 3) !== '.js') {
-      id = id + '.js';
-    }
-    return path + id;
   }
   function use(arr, cbk) {
     var acc = [];

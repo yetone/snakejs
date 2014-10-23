@@ -7,6 +7,12 @@
       requireRe = /[^.]\s*require\s*\(\s*["']([^'"\s]+)["']\s*\)/g,
       moduleMap = {},
       appendedScripts = [],
+      nextTick = window.setImmediate ? window.setImmediate.bind(window) : function(cbk) {
+        return window.setTimeout(cbk, 0);
+      },
+      clearTick = window.clearImmediate ? window.clearImmediate.bind(window) : function(timmer) {
+        return window.clearTimeout(timmer);
+      },
       arrProto = window.Array.prototype,
       objProto = window.Object.prototype,
       isArray = window.Array.isArray,
@@ -82,9 +88,9 @@
     };
   }
   function emitId(id) {
-    timmerMap[id] = window.setTimeout(function() {
+    timmerMap[id] = nextTick(function() {
       if (!moduleMap[id]) return emitId(id);
-      window.clearTimeout(timmerMap[id]);
+      clearTick(timmerMap[id]);
       observer.emit(id);
     });
   }

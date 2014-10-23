@@ -140,6 +140,10 @@
       _id = getCurrentId();
       _arr = [];
       _cbk = id;
+    } else if (isArray(id)) {
+      _id = getCurrentId();
+      _arr = id;
+      _cbk = arr;
     } else if (isFunction(arr)) {
       _arr = [];
       _cbk = arr;

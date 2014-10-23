@@ -154,10 +154,10 @@
     }
     use(_arr, _define);
     function _define() {
-      var module = moduleMap[_id] = {},
-          exports = {},
-          args = [require, exports, module];
-      module.exports = exports;
+      var module = moduleMap[_id] = {
+            exports: {}
+          },
+          args = [require, module.exports, module];
       arrProto.push.apply(args, arguments);
       _cbk.apply(_cbk, args);
     }

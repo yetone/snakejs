@@ -2,6 +2,8 @@
   var $DOC = window.document,
       snake = window.snake = {},
       $head = $DOC.head,
+      commentRe = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg,
+      requireRe = /[^.]\s*require\s*\(\s*["']([^'"\s]+)["']\s*\)/g,
       moduleMap = {},
       appendedScripts = [],
       arrProto = window.Array.prototype,
@@ -65,7 +67,7 @@
             cbks = self._cbks[event];
             if (!cbks) return;
             each(cbks, function(cbk) {
-              cbk();
+              cbk.apply(cbk, arrProto.slice.call(arguments, 1));
             });
           });
         };
@@ -90,6 +92,11 @@
     if ('onload' in $node) {
       return $node.onload = _onload;
     }
+    $node.onreadystatechange = function() {
+      if (/loaded|complete/.test($node.readyState)) {
+        _onload()
+      }
+    };
     function _onload() {
       $node.remove ? $node.remove() : $head.removeChild($node);
       emitId(id);
@@ -114,18 +121,28 @@
     $parent.appendChild($node);
   }
   function define(id, arr, cbk) {
+    var _arr = arr,
+        _cbk = cbk;
     if (isFunction(arr)) {
-      cbk = arr;
+      _arr = [];
+      _cbk = arr;
+    }
+    _cbk.toString()
+        .replace(commentRe, '')
+        .replace(requireRe, function (match, dep) {
+          _arr.indexOf(dep) < 0 && _arr.push(dep);
+        });
+    if (!_arr.length) {
       return _define();
     }
-    use(arr, _define);
+    use(_arr, _define);
     function _define() {
       var module = moduleMap[id] = {},
           exports = {},
           args = [require, exports, module];
       module.exports = exports;
       arrProto.push.apply(args, arguments);
-      cbk.apply(cbk, args);
+      _cbk.apply(_cbk, args);
     }
   }
   function use(arr, cbk) {
@@ -142,8 +159,7 @@
       appendScriptElement(src, id);
       observer.on(id, function() {
         if (!moduleMap[id]) {
-          console.log(id, arr);
-          return;
+          throw Error('no module named: "' + id + '"');
         }
         acc[idx] = moduleMap[id].exports;
         idxAcc.push(idx);
@@ -154,9 +170,8 @@
     }
   }
   function require(id) {
-    use(id);
     if (!moduleMap[id]) {
-      throw Error('no module named "' + id + '"!');
+      throw Error('no module named: "' + id + '"');
     }
     return moduleMap[id].exports;
   }

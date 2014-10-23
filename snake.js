@@ -177,5 +177,4 @@
   }
   snake.define = define;
   snake.use = use;
-  window.moduleMap = moduleMap;
 })((new Function('return this;'))());

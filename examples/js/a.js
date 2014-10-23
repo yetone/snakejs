@@ -1,3 +1,6 @@
+snake.config({
+  baseUrl: '/js/'
+});
 snake.use('foo b', function(foo, b) {
   console.log('*** in a.js ***');
   foo.bar();

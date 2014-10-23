@@ -2,6 +2,7 @@
   var $DOC = window.document,
       snake = window.snake = {},
       $head = $DOC.head,
+      baseUrl = '',
       commentRe = /(\/\*([\s\S]*?)\*\/|([^:]|^)\/\/(.*)$)/mg,
       requireRe = /[^.]\s*require\s*\(\s*["']([^'"\s]+)["']\s*\)/g,
       moduleMap = {},
@@ -102,8 +103,19 @@
       emitId(id);
     }
   }
-  function getSrcPath(src) {
-    return src.substr(0, src.lastIndexOf('/') + 1);
+  function getCurrentScript() {
+    return $DOC.currentScript;
+  }
+  function getCurrentId() {
+    var src = getCurrentScript().src;
+    return src.slice(src.indexOf(baseUrl) + baseUrl.length, src.lastIndexOf('.js'));
+  }
+  function genCurrentSrc(id) {
+    return genSrc(getCurrentSrcPath(), id);
+  }
+  function getCurrentSrcPath() {
+    var src = getCurrentScript().src;
+    return src.slice(0, src.lastIndexOf('/') + 1);
   }
   function genSrc(path, id) {
     if (id.slice(id.length - 3) !== '.js') {
@@ -121,9 +133,14 @@
     $parent.appendChild($node);
   }
   function define(id, arr, cbk) {
-    var _arr = arr,
+    var _id = id,
+        _arr = arr,
         _cbk = cbk;
-    if (isFunction(arr)) {
+    if (isFunction(id)) {
+      _id = getCurrentId();
+      _arr = [];
+      _cbk = id;
+    } else if (isFunction(arr)) {
       _arr = [];
       _cbk = arr;
     }
@@ -137,7 +154,7 @@
     }
     use(_arr, _define);
     function _define() {
-      var module = moduleMap[id] = {},
+      var module = moduleMap[_id] = {},
           exports = {},
           args = [require, exports, module];
       module.exports = exports;
@@ -153,9 +170,7 @@
     }
     each(arr, _use);
     function _use(id, idx) {
-      var $current = $DOC.currentScript;
-      var path = getSrcPath($current.src);
-      var src = genSrc(path, id);
+      var src = genCurrentSrc(id);
       appendScriptElement(src, id);
       observer.on(id, function() {
         if (!moduleMap[id]) {
@@ -177,4 +192,15 @@
   }
   snake.define = define;
   snake.use = use;
+  snake.config = function(opt) {
+    if (opt.baseUrl) {
+      baseUrl = opt.baseUrl;
+      if (baseUrl.charAt(0) !== '/') {
+        baseUrl = '/' + baseUrl;
+      }
+      if (baseUrl.charAt(baseUrl.length - 1) !== '/') {
+        baseUrl += '/';
+      }
+    }
+  };
 })((new Function('return this;'))());
